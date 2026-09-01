@@ -28,7 +28,7 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 
-from cleaning_core import clean_dataframe, DEFAULT_DICTIONARIES
+from cleaning_core import clean_dataframe, DEFAULT_DICTIONARIES, DEFAULT_DROP_COLUMNS
 
 st.set_page_config(page_title="Bakery Form Response Cleaner", layout="wide")
 
@@ -46,6 +46,9 @@ st.caption(
 st.sidebar.header("⚙️ Cleaning Settings")
 
 drop_empty = st.sidebar.checkbox("Drop fully empty columns", value=True)
+drop_system_email = st.sidebar.checkbox(
+    "Remove system 'Email' column (usually just \"anonymous\")", value=True
+)
 
 st.sidebar.subheader("Translation Dictionaries")
 st.sidebar.caption(
@@ -96,7 +99,10 @@ if uploaded is not None:
         st.stop()
 
     cleaned_df, merged_regions = clean_dataframe(
-        raw_df, dictionaries=dictionaries, drop_empty_cols=drop_empty
+        raw_df,
+        dictionaries=dictionaries,
+        drop_empty_cols=drop_empty,
+        drop_columns=DEFAULT_DROP_COLUMNS if drop_system_email else (),
     )
 
     st.success(

@@ -423,8 +423,21 @@ def translate_header(header: str, dicts) -> str:
 # Main entry point
 # ---------------------------------------------------------------------------
 
-def clean_dataframe(df, dictionaries=None, drop_empty_cols=True):
+# Forms metadata column that's near-useless for this survey: when the form
+# is set to collect anonymous responses, this column is just the literal
+# string "anonymous" for every row -- it is NOT the respondent's email (the
+# separate lowercase "email" question column is). Dropped by default; pass
+# drop_columns=() to clean_dataframe to keep it.
+DEFAULT_DROP_COLUMNS = ("Email",)
+
+
+def clean_dataframe(df, dictionaries=None, drop_empty_cols=True, drop_columns=DEFAULT_DROP_COLUMNS):
     """Clean + fully translate a raw Microsoft Forms export.
+
+    `drop_columns`: header names (matched after header whitespace-cleanup,
+    before translation) to remove outright, e.g. the Forms system "Email"
+    column that just reads "anonymous". Defaults to DEFAULT_DROP_COLUMNS;
+    pass () or [] to keep every column.
 
     Returns (cleaned_df, merge_info) where merge_info is a list of dicts
     describing every group of branching-question columns (e.g. the 10
@@ -440,6 +453,9 @@ def clean_dataframe(df, dictionaries=None, drop_empty_cols=True):
     dicts = _normalize_dicts(dicts)
 
     cleaned = clean_headers(df)
+
+    if drop_columns:
+        cleaned = cleaned.drop(columns=[c for c in drop_columns if c in cleaned.columns])
 
     # 1. Merge Forms' branching-question column groups (e.g. المنطقه..المنطقه10)
     #    into a single column each, before any translation happens.
